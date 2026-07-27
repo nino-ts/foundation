@@ -9,8 +9,8 @@
  */
 export type MiddlewareFn = (
     request: Request,
-    next: (request: Request) => Promise<Response>,
-) => Promise<Response>;
+    next: (request: Request) => Response | Promise<Response>,
+) => Response | Promise<Response>;
 
 /**
  * Route match payload from a router.
@@ -42,8 +42,8 @@ export type MiddlewareStackLike = {
  */
 export type PipelineLike = {
     through(middleware: MiddlewareFn[]): PipelineLike;
-    then(handler: (request: Request) => Promise<Response>): PipelineLike;
-    handle(request: Request): Promise<Response>;
+    then(handler: (request: Request) => Response | Promise<Response>): PipelineLike;
+    handle(request: Request): Response | Promise<Response>;
 };
 
 /**

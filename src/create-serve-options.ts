@@ -94,14 +94,16 @@ export function createServeOptions(
 ): Serve.Options<undefined> {
     const config = app.getConfig();
     const baseHandler = overrides.fetch ?? app.getHandler();
-    if (baseHandler === undefined) {
+    if (baseHandler === undefined || baseHandler === null) {
         throw new Error(
             "createServeOptions requires app.getHandler() or overrides.fetch. Call wireCoreServices(app, deps) first.",
         );
     }
 
+    const fetchHandler = baseHandler;
+
     const options: Serve.Options<undefined> = {
-        fetch: (request: Request) => baseHandler(request),
+        fetch: (request: Request) => fetchHandler(request),
         hostname: overrides.hostname ?? config.hostname,
         idleTimeout: overrides.idleTimeout ?? 30,
         port: overrides.port ?? config.port,
