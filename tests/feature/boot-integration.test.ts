@@ -11,12 +11,7 @@ import { createHttpHandler } from "../../src/create-http-handler";
 import { createServeOptions } from "../../src/create-serve-options";
 import { wireCoreServices } from "../../src/wire-core-services";
 import { FakeContainer } from "../helpers/fake-container";
-import {
-    FakeRouter,
-    FakeSyncBus,
-    createPipeline,
-    createWireDeps,
-} from "../helpers/http-fakes";
+import { FakeRouter, type FakeSyncBus, createPipeline, createWireDeps } from "../helpers/http-fakes";
 
 describe("foundation boot integration", () => {
     test("createHttpHandler dispatches a registered route", async () => {

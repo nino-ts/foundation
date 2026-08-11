@@ -576,7 +576,9 @@ describe("Application", () => {
         test("should timeout waiting for requests", async () => {
             const app = new Application(createTestConfig());
 
+            let requestStarted = false;
             app.setHandler(async () => {
+                requestStarted = true;
                 await new Promise((resolve) => setTimeout(resolve, 5000));
                 return new Response("OK");
             });
@@ -589,8 +591,12 @@ describe("Application", () => {
             // Start a slow request
             fetch(`http://localhost:${port}/`).catch(() => {});
 
-            // Give the request time to start
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            // Wait until the handler is actually running so activeRequests is tracked
+            const waitStart = Date.now();
+            while (!requestStarted && Date.now() - waitStart < 2000) {
+                await new Promise((resolve) => setTimeout(resolve, 5));
+            }
+            expect(requestStarted).toBe(true);
 
             const startTime = Date.now();
             // Shutdown with short timeout

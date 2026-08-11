@@ -4,7 +4,13 @@
  * @packageDocumentation
  */
 
-import type { CreatePipeline, MiddlewareFn, MiddlewareStackLike, RouterLike } from "../../src/http-contracts";
+import type {
+    CreatePipeline,
+    MiddlewareFn,
+    MiddlewareStackLike,
+    PipelineLike,
+    RouterLike,
+} from "../../src/http-contracts";
 
 type RouteEntry = {
     method: string;
@@ -60,40 +66,38 @@ export class FakeMiddlewareStack implements MiddlewareStackLike {
     }
 }
 
-export class FakePipeline {
-    private middleware: MiddlewareFn[] = [];
-    private finalHandler: ((request: Request) => Promise<Response>) | null = null;
+function createFakePipeline(): PipelineLike {
+    let middleware: MiddlewareFn[] = [];
+    let finalHandler: ((request: Request) => Response | Promise<Response>) | null = null;
 
-    through(middleware: MiddlewareFn[]): this {
-        this.middleware = [...middleware];
-        return this;
-    }
-
-    then(handler: (request: Request) => Promise<Response>): this {
-        this.finalHandler = handler;
-        return this;
-    }
-
-    async handle(request: Request): Promise<Response> {
-        if (!this.finalHandler) {
-            throw new Error("Pipeline requires a final handler.");
-        }
-        const run = async (index: number, req: Request): Promise<Response> => {
-            const current = this.middleware[index];
-            if (!current) {
-                return this.finalHandler?.(req) as Promise<Response>;
+    const pipeline: PipelineLike = {
+        through(nextMiddleware: MiddlewareFn[]): PipelineLike {
+            middleware = [...nextMiddleware];
+            return pipeline;
+        },
+        then(handler: (request: Request) => Response | Promise<Response>): PipelineLike {
+            finalHandler = handler;
+            return pipeline;
+        },
+        async handle(request: Request): Promise<Response> {
+            if (!finalHandler) {
+                throw new Error("Pipeline requires a final handler.");
             }
-            return current(req, (nextReq) => run(index + 1, nextReq));
-        };
-        return run(0, request);
-    }
+            const run = async (index: number, req: Request): Promise<Response> => {
+                const current = middleware[index];
+                if (!current) {
+                    return finalHandler(req);
+                }
+                return current(req, (nextReq) => run(index + 1, nextReq));
+            };
+            return run(0, request);
+        },
+    };
 
-    static create(): FakePipeline {
-        return new FakePipeline();
-    }
+    return pipeline;
 }
 
-export const createPipeline: CreatePipeline = () => FakePipeline.create();
+export const createPipeline: CreatePipeline = () => createFakePipeline();
 
 export class FakeEventDispatcher {}
 
